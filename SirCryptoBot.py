@@ -399,7 +399,7 @@ try:
             CMM_time = time.time()
             
 
-        now = datetime.now()
+        """now = datetime.now()
         current_hour = now.hour
         current_minute = now.minute
 
@@ -409,7 +409,7 @@ try:
 
 
         if 8 <= current_hour < 18:
-            funds_secured = False
+            funds_secured = False"""
         
 
 
