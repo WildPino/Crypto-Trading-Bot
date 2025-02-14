@@ -33,3 +33,6 @@ initial_capital = 45
 
 !!! Be sure to have at least (intital_capital) * (number of cryptos) in your exchange in USTD !!!
 
+### Change the folder of backup
+backup_folder = "E:\\data"
+
