@@ -42,6 +42,16 @@ backup_folder = "E:\\data"
 last_update_time = time.time()
 update_interval = 24 * 60 * 60
 
+def load_total_removed(state_file):
+    try:
+        with open(state_file, 'r') as file:
+            data = json.load(file)
+            return data.get('total_removed', 0)
+    except (FileNotFoundError, json.JSONDecodeError):
+        write_global_log("Error loading total_removed from state file. Setting to 0.")
+        return 0
+
+total_removed = load_total_removed(state_file)
 
 def save_state(state):
     with open(state_file, "w") as file:
