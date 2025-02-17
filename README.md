@@ -36,3 +36,9 @@ initial_capital = 45
 ### Change the folder of backup
 backup_folder = "E:\\data"
 
+## Thanks
+If you want to support me without spending anything: https://www.kucoin.com/r/rf/QBS4SNVZ
+
+### Changelog
+https://github.com/WildPino/Crypto-Trading-Bot/blob/SirProjects/Changelog.md
+
