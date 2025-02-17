@@ -5,3 +5,6 @@ To be updated to be a percentage
 
 ### 14/02/2025
 Added a backup function to prevent loss of data
+
+### 17/02/2025
+Fixed secure() function and added back
