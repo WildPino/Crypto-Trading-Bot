@@ -337,10 +337,18 @@ def trading_logic(symbol):
 
 
 def report_profit_or_loss():
-    total_capital = sum(state['capital'] for state in crypto_states.values())
+    total_capital = 0
+    for state in crypto_states.values():
+        if isinstance(state, dict) and 'capital' in state:
+            total_capital += state['capital']
+        else:
+            write_global_log(f"Warning: Invalid state structure detected: {state}")
+
     total_initial = initial_capital * len(cryptos)
     profit_or_loss = total_capital - total_initial
+    p_o_l_plus_secured = profit_or_loss + total_removed
     write_global_log(f"Current Profit/Loss: {profit_or_loss:.6f} USDT.")
+    print("Total :", p_o_l_plus_secured, "USDT")
     print(f"[PROFIT/LOSS] {profit_or_loss:.6f} USDT.")
     
 #mariotto
