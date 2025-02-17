@@ -7,68 +7,64 @@ import requests
 import sys
 from datetime import datetime
 import shutil
+import re
 
 
 # Configure KuCoin API
 exchange = ccxt.kucoin({
     'apiKey': 'XXXXXXX',
     'secret': 'XXXXXXX',
-    'password': 'XXXXXX',
+    'password': 'XXXXXXX',
 })
 
 
 #['BTC/USDT', 'ETH/USDT', 'LINK/USDT', 'TON/USDT', 'XLM/USDT', 'DOT/USDT', 'UNI/USDT', 'ICP/USDT', 'APT/USDT', 'AAVE/USDT', 'POL/USDT', 'VIRTUAL/USDT', 'ARB/USDT', 'FIL/USDT', 'ATOM/USDT', 'OP/USDT', 'TIA/USDT', 'IMX/USDT', 'INJ/USDT', 'GRT/USDT', 'WLD/USDT', 'JASMY/USDT', 'RUNE/USDT', 'RAY/USDT', 'BRETT/USDT', 'FLR/USDT', 'QNT/USDT', 'KCS/USDT', 'CRV/USDT', 'ENS/USDT', 'AR/USDT', 'AIOZ/USDT', 'AERO/USDT']
 
-exchange.options['defaultType'] = 'spot' 
+exchange.options['defaultType'] = 'spot'
 
-
+# Global variables
 cryptos = ['BTC/USDT', 'ETH/USDT', 'LINK/USDT', 'TON/USDT', 'XLM/USDT', 'DOT/USDT', 'UNI/USDT', 'ICP/USDT', 'APT/USDT', 'AAVE/USDT', 'POL/USDT', 'VIRTUAL/USDT', 'ARB/USDT', 'FIL/USDT', 'ATOM/USDT', 'OP/USDT', 'TIA/USDT', 'IMX/USDT', 'INJ/USDT', 'GRT/USDT', 'WLD/USDT', 'JASMY/USDT', 'RUNE/USDT', 'RAY/USDT', 'FLR/USDT', 'QNT/USDT', 'KCS/USDT', 'CRV/USDT', 'ENS/USDT', 'AR/USDT', 'SOL/USDT']
-initial_capital = 45
-base_investment_percentage = 0.2
+initial_capital = 45 #Change this
+base_investment_percentage = 0.2 #You can change this
 take_profit = 1.025
 buy_on_drop = 0.95
 minimum_investment_percentage = 0.01
 minimum_investment = 0.1
 margin_tolerance = 0.001  
 fear_and_greed_index = None
-funds_secured = False
-
+funds_secured = True
 
 state_file = "bot_state.json"
 stop_file = "stop.txt"
+reserved_funds_file = "reserved_funds.json"
 backup_folder = "E:\\data"
 
-
 last_update_time = time.time()
-
-
 update_interval = 24 * 60 * 60
 
 
 def save_state(state):
     with open(state_file, "w") as file:
         json.dump(state, file, indent=4)
-    print("Saved state.")
+    print("State saved.")
     
 def backup_state_file():
-    """Crea una copia di backup del file bot_state.json nella cartella E:\data"""
     if not os.path.exists(state_file):
-        print(" Errore: Il file bot_state.json non esiste.")
+        print("Error: The file bot_state.json does not exist.")
         return
 
     if not os.path.exists(backup_folder):
-        print(f" La cartella {backup_folder} non esiste. Creazione in corso...")
-        os.makedirs(backup_folder)  
-
+        print(f"The folder {backup_folder} doesn't exist. Initializing...")
+        os.makedirs(backup_folder) 
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     backup_file = os.path.join(backup_folder, f"bot_state_backup_{timestamp}.json")
 
     try:
         shutil.copy2(state_file, backup_file)
-        print(f" Backup creato con successo: {backup_file}")
+        print(f"Backup created successfully: {backup_file}")
     except Exception as e:
-        print(f" Errore durante il backup: {e}")
+        print(f"Error during backup: {e}")
 
 def load_state():
     if os.path.exists(state_file):
@@ -87,38 +83,37 @@ def load_state():
     }
 
 def handle_critical_error(error_message):
-    """Gestisce errori critici, salva lo stato e riavvia il bot dopo 10 minuti."""
+    """Handles critical errors, saves the state, and restarts the bot after 10 minutes."""
     write_global_log(f"Critical error: {error_message}")
     save_state(crypto_states)
     write_global_log("Restarting bot in 10 minutes...")
-    time.sleep(600)  
-    os.execl(sys.executable, sys.executable, *sys.argv)  
-    
-    
+    time.sleep(600)
+    os.execl(sys.executable, sys.executable, *sys.argv)  # Restart the current process
+       
 def fetch_fear_and_greed_index():
     try:
         url = "https://api.alternative.me/fng/?limit=1"
         response = requests.get(url)
-        response.raise_for_status() 
+        response.raise_for_status()
         data = response.json()
         if data and 'data' in data and len(data['data']) > 0:
             return int(data['data'][0]['value'])
         else:
-            raise ValueError("Dati dell'indice non disponibili.")
+            raise ValueError("Index data not available.")
     except requests.exceptions.RequestException as e:
-        print(f"Errore nella richiesta HTTP: {e}")
+        print(f"HTTP request error: {e}")
         return None
     except ValueError as e:
-        print(f"Errore nei dati ricevuti: {e}")
+        print(f"Data error: {e}")
         return None
     except Exception as e:
-        print(f"Errore imprevisto: {e}")
+        print(f"Unexpected error: {e}")
         return None
         
 def calculate_buy_on_drop(fear_and_greed_index):
     if fear_and_greed_index is None:
         write_global_log("Warning: Fear and Greed Index is None. Using default buy_on_drop value.")
-        return 0.95  
+        return 0.95 
     
     min_index = 1
     max_index = 100
@@ -126,30 +121,21 @@ def calculate_buy_on_drop(fear_and_greed_index):
     max_buy_on_drop = 0.99
     return (min_buy_on_drop + (max_buy_on_drop - min_buy_on_drop) * ((fear_and_greed_index - min_index) / (max_index - min_index)))
     
-
-
-
 def update_buy_on_drop():
     global buy_on_drop, fear_and_greed_index, take_profit 
     
     index = fetch_fear_and_greed_index()
     if index is not None:
         fear_and_greed_index = index  
-        buy_on_drop = calculate_buy_on_drop(index) 
+        buy_on_drop = calculate_buy_on_drop(index)  
         take_profit = buy_on_drop + 0.085
         if take_profit < 1.01:
             take_profit = 1.01
-        print(f"Indice: {index}, nuovo buy_on_drop: {buy_on_drop:.2f}, nuovo take_profit: {take_profit:.2f} ")
+        print(f"Index: {index}, new buy_on_drop: {buy_on_drop:.2f}, new take_profit: {take_profit:.2f}")
     else:
-        print("Errore nel recupero dell'indice.")
+        print("Error retrieving the index.")
         buy_on_drop = 0.95
         take_profit = 1.025
-
-
-
-
-    
-  
 
 def fetch_minimum_order_sizes():
     try:
@@ -170,12 +156,8 @@ def fetch_minimum_order_sizes():
         handle_critical_error(f"Error fetching minimum order sizes: {e}")
         return {}
 
-
 minimum_order_sizes = fetch_minimum_order_sizes()
-
-
 crypto_states = load_state()
-
 global_log_file = "global_log.txt"
 
 def write_global_log(message):
@@ -216,40 +198,31 @@ def place_order(symbol, side, amount, price=None):
         return None
 
 def secure_funds(state_file):
-
     with open(state_file, 'r') as file:
         data = json.load(file)
 
     total_removed = 0
 
-
-    for crypto in data:
-        if 'capital' in data[crypto]:
-
-            data[crypto]['capital'] -= 0.01
+    for crypto, values in data.items():
+        if isinstance(values, dict) and 'capital' in values:
+            values['capital'] -= 0.01
             total_removed += 0.01
-
 
     if 'total_removed' in data:
         data['total_removed'] += total_removed
     else:
         data['total_removed'] = total_removed
 
-
     with open(state_file, 'w') as file:
         json.dump(data, file, indent=4)
 
-    print(f"Capitale aggiornato e {total_removed} rimossi. Totale rimossi finora: {data['total_removed']}")
-
-
-
+    print(f"Capital updated and {total_removed} removed. Total removed so far: {data['total_removed']}")
 
 last_logged_message = {}
 
 def trading_logic(symbol):
     min_sizes = fetch_minimum_order_sizes()
     state = crypto_states[symbol]
-
 
     state['rincaro_level'] = state.get('rincaro_level', 0)
 
@@ -263,7 +236,6 @@ def trading_logic(symbol):
         ticker = exchange.fetch_ticker(symbol, {'timeout': 10})
         current_price = ticker['last']
 
-
         min_size = min_sizes.get(symbol)
         if not min_size:
             write_log(symbol, "Minimum values not available for this pair.")
@@ -271,7 +243,6 @@ def trading_logic(symbol):
 
         base_min_size = min_size['baseMinSize']
         quote_min_size = min_size['quoteMinSize']
-
 
         if not state['unsold_orders']:
             order_size = (capital * current_percentage) / current_price
@@ -291,16 +262,15 @@ def trading_logic(symbol):
                 write_log(symbol, f"Purchase Order {state['order_count']}: {order_size:.6f} at {current_price:.6f} USDT.")
                 print(f"[{symbol}] Remaining capital after purchase: {state['capital']:.6f} USDT.")
                 write_log(symbol, f"Remaining capital after purchase: {state['capital']:.6f} USDT.")
-                last_logged_message[symbol] = None  
+                last_logged_message[symbol] = None
             else:
                 if exchange.last_error and '200004' in exchange.last_error:
                     write_log(symbol, "Insufficient balance error: Canceling your last purchase.")
-                    state['capital'] += cost  
-                    state['order_count'] -= 1  
+                    state['capital'] += cost
+                    state['order_count'] -= 1 
                     if state['unsold_orders']:
-                        state['unsold_orders'].pop()  
-                    last_logged_message[symbol] = None  
-
+                        state['unsold_orders'].pop() 
+                    last_logged_message[symbol] = None
 
         for order in state['unsold_orders'][:]:
             if current_price >= order['price'] * take_profit:
@@ -309,8 +279,7 @@ def trading_logic(symbol):
                 place_order(symbol, 'sell', order['amount'], current_price)
                 state['unsold_orders'].remove(order)
 
-
-                if not order.get('is_rincaro', False):  
+                if not order.get('is_rincaro', False):
                     state['sales_streak'] = state.get('sales_streak', 0) + 1
                     if state['sales_streak'] > 20:
                         state['sales_streak'] = 20
@@ -319,15 +288,12 @@ def trading_logic(symbol):
                     )
                 else:
                     state['sales_streak'] = 0 
-
-
                     state['rincaro_level'] = max(state['rincaro_level'] - 1, 0)
 
                 write_log(symbol, f"Sale Order {state['order_count']}: Profit {revenue:.6f} USDT.")
                 print(f"[{symbol}] Remaining capital after sale: {state['capital']:.6f} USDT. " + str(take_profit) + " -BoD updated," + str(fear_and_greed_index) + "-FaG index")
                 write_log(symbol, f"Remaining capital after sale: {state['capital']:.6f} USDT.")
-                last_logged_message[symbol] = None 
-
+                last_logged_message[symbol] = None  
 
         if state['unsold_orders']:
             last_order = state['unsold_orders'][-1]
@@ -355,12 +321,12 @@ def trading_logic(symbol):
                     write_log(symbol, f"Order price increase {state['order_count']} N. {state['rincaro_level']}: {order_size:.6f} at {current_price:.6f} USDT.")
                     print(f"[{symbol}] Remaining capital after the increase: {state['capital']:.6f} USDT. " + str(buy_on_drop) + " -BoD updated," + str(fear_and_greed_index) + "-FaG index")
                     write_log(symbol, f"Remaining capital after the increase: {state['capital']:.6f} USDT.")
-                    last_logged_message[symbol] = None 
+                    last_logged_message[symbol] = None  
                 else:
                     if exchange.last_error and '200004' in exchange.last_error:
                         write_log(symbol, "Insufficient balance error: Cancellation of the last new purchase order.")
-                        state['capital'] += cost 
-                        state['rincaro_level'] = max(state['rincaro_level'] - 1, 0)  
+                        state['capital'] += cost  
+                        state['rincaro_level'] = max(state['rincaro_level'] - 1, 0) 
                         if state['unsold_orders']:
                             state['unsold_orders'].pop() 
                         last_logged_message[symbol] = None  
@@ -377,19 +343,17 @@ def report_profit_or_loss():
     write_global_log(f"Current Profit/Loss: {profit_or_loss:.6f} USDT.")
     print(f"[PROFIT/LOSS] {profit_or_loss:.6f} USDT.")
     
-
-
-
+#mariotto
 try:
     set_process_priority()
     start_time = time.time()
     secure_time = time.time()
     CMM_time = time.time()
     backup_time = time.time()
-    report_interval = 600  # 10 minuti
-    CMM_interval = 600*3  # 30 minuti
-    secure_interval = 86400 #24 Ore
-    backup_interval = 86400 #24 Ore
+    report_interval = 600  # 10 minutes
+    CMM_interval = 600*3  # 30 minutes
+    secure_interval = 86400 #24 hours
+    backup_interval = 86400 #24 hours
     
     fetch_fear_and_greed_index()
     calculate_buy_on_drop(fear_and_greed_index)
@@ -404,17 +368,14 @@ try:
         
         save_state(crypto_states)
         
-
         if time.time() - last_update_time >= update_interval:
             write_global_log("Updating minimum order sizes...")
             minimum_order_sizes = fetch_minimum_order_sizes()
             last_update_time = time.time()
             write_global_log("Minimum order sizes updated successfully.")
 
-
         for symbol in cryptos:
             trading_logic(symbol)
-
 
         if time.time() - start_time >= report_interval:
             report_profit_or_loss()
@@ -430,20 +391,22 @@ try:
             backup_state_file()
             backup_time = time.time()
             
-        """# **Nuova gestione dell'orario per secure_funds()**
         now = datetime.now()
         current_hour = now.hour
         current_minute = now.minute
 
-        # Esegui secure_funds tra le 10:00 e le 10:30 se non è già stato fatto
-        if (current_hour == 22 and 0 <= current_minute < 30) and not funds_secured:
-            secure_funds(state_file)
+        if 13 <= current_hour < 18:
+            funds_secured = False
 
-        # Resetta funds_secured tra le 8:00 e le 18:00 per permettere la prossima esecuzione
-        if 8 <= current_hour < 18:
-            funds_secured = False """
+        if 1 <= current_hour < 11:
+            funds_secured = False
         
-
+        if (current_hour == 12 and 0 <= current_minute < 1) and funds_secured == False:
+            secure_funds(state_file)
+            write_global_log("Restarting bot in 10 seconds...")
+            time.sleep(10) 
+            os.execl(sys.executable, sys.executable, *sys.argv)
+            funds_secured = True
 
         time.sleep(2)
 
