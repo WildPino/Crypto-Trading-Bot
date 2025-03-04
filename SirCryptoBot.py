@@ -42,6 +42,12 @@ backup_folder = "E:\\data"
 last_update_time = time.time()
 update_interval = 24 * 60 * 60
 
+def write_global_log(message):
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open(global_log_file, "a") as file:
+        file.write(f"[{timestamp}] {message}\n")
+    print(f"[GLOBAL] {message}")
+
 def load_total_removed(state_file):
     try:
         with open(state_file, 'r') as file:
@@ -169,12 +175,6 @@ def fetch_minimum_order_sizes():
 minimum_order_sizes = fetch_minimum_order_sizes()
 crypto_states = load_state()
 global_log_file = "global_log.txt"
-
-def write_global_log(message):
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    with open(global_log_file, "a") as file:
-        file.write(f"[{timestamp}] {message}\n")
-    print(f"[GLOBAL] {message}")
 
 def write_log(symbol, message):
     log_file = f"{symbol.replace('/', '_')}_log.txt"
