@@ -11,3 +11,6 @@ Fixed secure() function and added back
 
 ### 04/03/2025
 Fixed an issue with the function write_global_log()
+
+### 07/03/2025
+Fixed an issue with global_log_file
