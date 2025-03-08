@@ -301,7 +301,7 @@ def trading_logic(symbol):
                     state['rincaro_level'] = max(state['rincaro_level'] - 1, 0)
 
                 write_log(symbol, f"Sale Order {state['order_count']}: Profit {revenue:.6f} USDT.")
-                print(f"[{symbol}] Remaining capital after sale: {state['capital']:.6f} USDT. " + str(take_profit) + " -BoD updated," + str(fear_and_greed_index) + "-FaG index")
+                print(f"[{symbol}] Remaining capital after sale: {state['capital']:.6f} USDT. " + str(take_profit) + " -TP updated," + str(fear_and_greed_index) + "-FaG index")
                 write_log(symbol, f"Remaining capital after sale: {state['capital']:.6f} USDT.")
                 last_logged_message[symbol] = None  
 
