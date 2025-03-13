@@ -98,14 +98,6 @@ def load_state():
             'rincaro_count': 0
         } for symbol in cryptos
     }
-
-def handle_critical_error(error_message):
-    """Handles critical errors, saves the state, and restarts the bot after 10 minutes."""
-    write_global_log(f"Critical error: {error_message}")
-    save_state(crypto_states)
-    write_global_log("Restarting bot in 10 minutes...")
-    time.sleep(600)
-    os.execl(sys.executable, sys.executable, *sys.argv)  # Restart the current process
        
 def fetch_fear_and_greed_index():
     try:
@@ -175,6 +167,14 @@ def fetch_minimum_order_sizes():
 
 minimum_order_sizes = fetch_minimum_order_sizes()
 crypto_states = load_state()
+
+def handle_critical_error(error_message):
+    """Handles critical errors, saves the state, and restarts the bot after 10 minutes."""
+    write_global_log(f"Critical error: {error_message}")
+    save_state(crypto_states)
+    write_global_log("Restarting bot in 10 minutes...")
+    time.sleep(600)
+    os.execl(sys.executable, sys.executable, *sys.argv)
 
 def write_log(symbol, message):
     log_file = f"{symbol.replace('/', '_')}_log.txt"
