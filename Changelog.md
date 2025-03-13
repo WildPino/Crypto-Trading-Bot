@@ -14,3 +14,6 @@ Fixed an issue with the function write_global_log()
 
 ### 07/03/2025
 Fixed an issue with global_log_file
+
+### 13/03/2025
+Fixed an issue with crypto_state
