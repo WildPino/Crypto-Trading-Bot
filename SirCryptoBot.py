@@ -165,7 +165,6 @@ def fetch_minimum_order_sizes():
         handle_critical_error(f"Error fetching minimum order sizes: {e}")
         return {}
 
-minimum_order_sizes = fetch_minimum_order_sizes()
 crypto_states = load_state()
 
 def handle_critical_error(error_message):
@@ -175,6 +174,8 @@ def handle_critical_error(error_message):
     write_global_log("Restarting bot in 10 minutes...")
     time.sleep(600)
     os.execl(sys.executable, sys.executable, *sys.argv)
+
+minimum_order_sizes = fetch_minimum_order_sizes()
 
 def write_log(symbol, message):
     log_file = f"{symbol.replace('/', '_')}_log.txt"
