@@ -2,6 +2,10 @@
 
 This is an automated cryptocurrency trading bot that analyzes the market and executes buy/sell orders. The bot is designed to optimize trading strategies by continuously learning from past trades and market conditions.
 
+## Attention
+The project is undergoing a major overhaul due to a too low profit margin following several simulations (19/03/2025)
+
+
 ## Features
 
 Automated trading on KuCoin
